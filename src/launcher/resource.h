@@ -1,0 +1,7 @@
+#define IDD_KAPSEL 100
+#define IDC_ISO 101
+#define IDC_BROWSE 102
+#define IDC_WHPX 103
+#define IDC_BOOT_ISO 104
+#define IDC_BOOT_DISK 105
+#define IDC_STATUS 106

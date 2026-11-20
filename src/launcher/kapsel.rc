@@ -1,0 +1,47 @@
+#pragma code_page(65001)
+#include <windows.h>
+#include "resource.h"
+#include "version.h"
+
+1 RT_MANIFEST "kapsel.exe.manifest"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+1 VERSIONINFO
+FILEVERSION KAPSEL_FILE_VERSION
+PRODUCTVERSION KAPSEL_FILE_VERSION
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "Kapsel"
+            VALUE "FileVersion", KAPSEL_VERSION
+            VALUE "OriginalFilename", "Kapsel.exe"
+            VALUE "ProductName", "Kapsel"
+            VALUE "ProductVersion", KAPSEL_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+IDD_KAPSEL DIALOGEX 0, 0, 298, 124
+STYLE DS_SETFONT | DS_CENTER | WS_CAPTION | WS_SYSMENU
+CAPTION "Kapsel"
+FONT 9, "Microsoft YaHei UI"
+BEGIN
+    LTEXT "启动镜像", -1, 12, 12, 274, 10
+    EDITTEXT IDC_ISO, 12, 26, 216, 15, ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON "选择 ISO…(&O)", IDC_BROWSE, 234, 25, 52, 17
+    AUTOCHECKBOX "优先使用 WHPX（不可用时回退到 TCG）", IDC_WHPX, 12, 52, 274, 13, WS_TABSTOP
+    LTEXT "", IDC_STATUS, 12, 75, 274, 12
+    PUSHBUTTON "从硬盘启动(&D)", IDC_BOOT_DISK, 112, 96, 82, 18
+    DEFPUSHBUTTON "从 ISO 启动(&I)", IDC_BOOT_ISO, 200, 96, 86, 18
+END
