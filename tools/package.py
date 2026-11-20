@@ -46,7 +46,8 @@ def build_launcher(stage, work, version, components):
     subprocess.run(
         [MINGW + "gcc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-s",
          "-municode", "-mwindows", "-o", stage / "Kapsel.exe",
-         LAUNCHER / "kapsel.c", resource, "-lcomdlg32"],
+         LAUNCHER / "kapsel.c", LAUNCHER / "appearance.c", resource,
+         "-lcomdlg32", "-lcomctl32", "-lgdi32"],
         check=True,
     )
 

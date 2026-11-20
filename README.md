@@ -10,21 +10,22 @@ Kapsel 随包提供 QEMU。解压后即可从 Linux ISO 启动，安装后的系
 | --- | --- | --- |
 | Kapsel · Windows x64 | [最新发布](https://github.com/chaeoi/kapsel/releases/latest) | 下载 `Kapsel-<版本>-windows-x64.zip`。发布页同时提供 `SHA256SUMS`。 |
 | Debian 13（Trixie）· amd64 | [官方 `mini.iso`（约 64 MiB）](https://deb.debian.org/debian/dists/trixie/main/installer-amd64/current/images/netboot/mini.iso) | 轻量安装介质，启动后联网获取系统软件包。 |
+| Ubuntu 26.04.1 LTS · amd64 | [官方 Mini ISO（约 122 MiB）](https://cdimage.ubuntu.com/ubuntu-mini-iso/releases/26.04.1/release/ubuntu-mini-iso-26.04.1-mini-iso-amd64.iso) | 启动后联网下载所选版本的完整安装镜像。安装 Server 时可选择 Ubuntu Server (minimized)。 |
 
 宿主机需要 Windows 10 2004 或更新版本（x64）。也可以使用其他支持传统 BIOS 启动的 x86-64 Linux ISO。
 
 ## 首次启动
 
 1. 将便携包完整解压到有写入权限的目录，双击 `Kapsel.exe`。
-2. 点击「选择 ISO」选中镜像，再点击「从 ISO 启动」。Kapsel 会在程序旁创建 `vm.qcow2`，供 Linux 安装程序使用。
+2. 点击「选择 ISO」选中镜像，按需调整虚拟硬件，再点击「从 ISO 启动」。Kapsel 会在程序旁创建 `vm.qcow2`，供 Linux 安装程序使用。虚拟机窗口打开后，启动器会自动关闭。
 3. 在 Linux 安装程序中选择虚拟硬盘。使用 Debian 时，可以在「软件选择」中取消桌面环境，保留「标准系统工具」以获得常用命令行工具。取消所有任务可进一步缩小安装占用。 [Debian 安装指南](https://www.debian.org/releases/trixie/amd64/apds02.en.html)
 4. 安装完成后关闭虚拟机。下次打开 `Kapsel.exe` 时，点击「从硬盘启动」。
 
 ## 运行与数据
 
-- **默认配置**为 2 个虚拟 CPU、4 GiB 内存、64 GiB 虚拟硬盘，使用 TCG 软件模拟和用户态 NAT。普通用户权限即可启动。
+- **默认配置**为 2 个虚拟 CPU、4 GiB 内存、64 GiB 虚拟硬盘，使用 TCG 软件模拟和用户态 NAT。普通用户权限即可启动。虚拟 CPU 和内存设置会自动记住。首次启动前可以修改新盘容量，已有磁盘的容量在界面中只读显示。
 - **硬件加速**可通过「优先使用 WHPX」启用。宿主机需启用 Windows 虚拟机监控程序平台。WHPX 初始化失败时，QEMU 回退到 TCG。 [QEMU 的 WHPX 文档](https://www.qemu.org/docs/master/system/whpx.html)
-- **备份与迁移**时先关闭虚拟机，再复制 `vm.qcow2`。这个文件随实际写入增长，64 GiB 是虚拟容量。
+- **备份与迁移**时先关闭虚拟机，再复制 `vm.qcow2`。这个文件随实际写入增长。
 - **启动异常**时查看程序旁的 `qemu.log`。
 
 ## 从源码构建
