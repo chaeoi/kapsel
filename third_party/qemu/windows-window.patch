@@ -1,0 +1,38 @@
+--- a/ui/sdl2.c
++++ b/ui/sdl2.c
+@@ -645,8 +645,7 @@
+                 allow_close = false;
+             }
+             if (allow_close) {
+-                shutdown_action = SHUTDOWN_ACTION_POWEROFF;
+-                qemu_system_shutdown_request(SHUTDOWN_CAUSE_HOST_UI);
++                qemu_system_powerdown_request();
+             }
+         } else {
+             SDL_HideWindow(scon->real_window);
+@@ -692,8 +691,7 @@
+                 allow_close = false;
+             }
+             if (allow_close) {
+-                shutdown_action = SHUTDOWN_ACTION_POWEROFF;
+-                qemu_system_shutdown_request(SHUTDOWN_CAUSE_HOST_UI);
++                qemu_system_powerdown_request();
+             }
+             break;
+         case SDL_MOUSEMOTION:
+@@ -1000,8 +998,15 @@
+     }
+ #endif
+     g_free(dir);
++    SDL_Surface *kapsel_icon = SDL_LoadBMP("runtime/kapsel.bmp");
++    if (kapsel_icon) {
++        SDL_FreeSurface(icon);
++        icon = kapsel_icon;
++        SDL_SetColorKey(icon, SDL_TRUE, SDL_MapRGB(icon->format, 255, 255, 255));
++    }
+     if (icon) {
+         SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
++        SDL_FreeSurface(icon);
+     }
+
+     mouse_mode_notifier.notify = sdl_mouse_mode_change;

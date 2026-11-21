@@ -1,0 +1,6 @@
+{
+  "directory": "llvm-mingw-20261117-msvcrt-ubuntu-22.04-x86_64",
+  "file": "llvm-mingw-20261117-msvcrt-ubuntu-22.04-x86_64.tar.xz",
+  "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20261117/llvm-mingw-20261117-msvcrt-ubuntu-22.04-x86_64.tar.xz",
+  "sha256": "4966284839f53d1f11dfbb73f0c30f8a390e6114355b727d858043c1232b649c"
+}

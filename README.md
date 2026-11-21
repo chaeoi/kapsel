@@ -1,54 +1,69 @@
-<h1 align="center">Kapsel</h1>
+# Kapsel
 
-<p align="center">Windows 上的便携式 Linux 虚拟机</p>
+Windows x64 便携虚拟机。解压后双击 `Kapsel.exe`，即可离线进入内置的 Debian 13 命令行。也可以通过同一个窗口从自选 ISO 启动图形虚拟机。
 
-Kapsel 随包提供 QEMU。解压后即可从 Linux ISO 启动，安装后的系统和数据存放在同目录的 `vm.qcow2`。
+[下载 Windows x64 便携包](https://github.com/chaeoi/kapsel/releases/latest)
 
-## 下载
+## 使用
 
-| 文件 | 下载 | 用途 |
+将 ZIP 完整解压到有写入权限的目录。使用 Windows 10 2004 或更新版本的 x64 系统。
+
+| 操作 | 用法 |
+| --- | --- |
+| 打开内置 Debian | 双击 `Kapsel.exe`。系统会以普通用户登录，提供 Bash、APT 和 sudo。 |
+| 从 ISO 安装 | 点击「从 ISO 启动」，选择支持传统 BIOS 启动的 x86-64 ISO。图形窗口出现后，主窗口最小化。 |
+| 进入 ISO 安装的系统 | 在主窗口的更多操作中选择「从 ISO 虚拟硬盘启动」。 |
+| 设置虚拟硬件 | 「虚拟机设置」可调整 ISO 虚拟机的 CPU 数、内存和新盘容量。设置于下次启动生效。 |
+| 关机 | 在客户机内关机、使用主窗口的「关机」，或关闭 ISO 图形窗口以向客户机发送电源事件。 |
+
+内置 Debian 使用 1 个虚拟 CPU、512 MiB 内存和 4 GiB 虚拟磁盘。ISO 虚拟机默认使用 2 个虚拟 CPU、4 GiB 内存和 32 GiB 新盘。两种模式默认使用 TCG 和用户态 NAT。「优先使用 WHPX」适用于两种模式。打开此设置后，QEMU 会优先使用 Windows 虚拟机监控程序平台，初始化失败时回退到 TCG。 [WHPX 文档](https://www.qemu.org/docs/master/system/whpx.html)
+
+### 文件与备份
+
+- `data/debian.qcow2` 保存内置 Debian 的系统和用户文件。首次启动时由随包镜像生成。
+- `data/iso.qcow2` 保存从外部 ISO 安装的系统。磁盘文件随实际写入增长。
+- `settings.ini` 保存虚拟硬件和加速设置。`data/qemu.log` 记录最近一次虚拟机启动。
+
+关机后可复制对应的 QCOW2 文件做备份。
+
+### 官方安装镜像
+
+| 镜像 | 大小 | 安装方式 |
 | --- | --- | --- |
-| Kapsel · Windows x64 | [最新发布](https://github.com/chaeoi/kapsel/releases/latest) | 下载 `Kapsel-<版本>-windows-x64.zip`。发布页同时提供 `SHA256SUMS`。 |
-| Debian 13（Trixie）· amd64 | [官方 `mini.iso`（约 64 MiB）](https://deb.debian.org/debian/dists/trixie/main/installer-amd64/current/images/netboot/mini.iso) | 轻量安装介质，启动后联网获取系统软件包。 |
-| Ubuntu 26.04.1 LTS · amd64 | [官方 Mini ISO（约 122 MiB）](https://cdimage.ubuntu.com/ubuntu-mini-iso/releases/26.04.1/release/ubuntu-mini-iso-26.04.1-mini-iso-amd64.iso) | 启动后联网下载所选版本的完整安装镜像。安装 Server 时可选择 Ubuntu Server (minimized)。 |
+| Debian 13 amd64 [mini.iso](https://deb.debian.org/debian/dists/trixie/main/installer-amd64/current/images/netboot/mini.iso) | 约 64 MiB | 在安装过程中联网获取 Debian 软件包。 |
+| Ubuntu 26.04.1 LTS amd64 [Mini ISO](https://cdimage.ubuntu.com/ubuntu-mini-iso/releases/26.04.1/release/ubuntu-mini-iso-26.04.1-mini-iso-amd64.iso) | 约 122 MiB | 联网下载所选 Ubuntu 安装镜像。 |
 
-宿主机需要 Windows 10 2004 或更新版本（x64）。也可以使用其他支持传统 BIOS 启动的 x86-64 Linux ISO。
+## 源码构建
 
-## 首次启动
-
-1. 将便携包完整解压到有写入权限的目录，双击 `Kapsel.exe`。
-2. 点击「选择 ISO」选中镜像，按需调整虚拟硬件，再点击「从 ISO 启动」。Kapsel 会在程序旁创建 `vm.qcow2`，供 Linux 安装程序使用。虚拟机窗口打开后，启动器会自动关闭。
-3. 在 Linux 安装程序中选择虚拟硬盘。使用 Debian 时，可以在「软件选择」中取消桌面环境，保留「标准系统工具」以获得常用命令行工具。取消所有任务可进一步缩小安装占用。 [Debian 安装指南](https://www.debian.org/releases/trixie/amd64/apds02.en.html)
-4. 安装完成后关闭虚拟机。下次打开 `Kapsel.exe` 时，点击「从硬盘启动」。
-
-## 运行与数据
-
-- **默认配置**为 2 个虚拟 CPU、4 GiB 内存、64 GiB 虚拟硬盘，使用 TCG 软件模拟和用户态 NAT。普通用户权限即可启动。虚拟 CPU 和内存设置会自动记住。首次启动前可以修改新盘容量，已有磁盘的容量在界面中只读显示。
-- **硬件加速**可通过「优先使用 WHPX」启用。宿主机需启用 Windows 虚拟机监控程序平台。WHPX 初始化失败时，QEMU 回退到 TCG。 [QEMU 的 WHPX 文档](https://www.qemu.org/docs/master/system/whpx.html)
-- **备份与迁移**时先关闭虚拟机，再复制 `vm.qcow2`。这个文件随实际写入增长。
-- **启动异常**时查看程序旁的 `qemu.log`。
-
-## 从源码构建
-
-在 Linux 上准备 Python 3、MinGW-w64 x86-64、7-Zip 和 curl。在 Ubuntu 上可通过 `gcc-mingw-w64-x86-64-win32` 和 `p7zip-full` 安装编译及解包工具。
+在 Ubuntu 24.04 x86-64 上准备构建依赖，分别生成 QEMU 运行时和 Debian 磁盘，再组装便携包。Debian 构建使用独立挂载命名空间，需要 root 和可用的 loop 设备。
 
 ```sh
-python3 -m unittest discover -s tests -v
-python3 tools/package.py
+sudo apt-get install cmake ninja-build g++-mingw-w64-x86-64-win32 \
+  binutils-mingw-w64-x86-64 pkg-config python3-venv zstd debootstrap \
+  grub-pc-bin grub2-common qemu-system-x86 qemu-utils
+
+build_root="$(mktemp -d)"
+python3 tools/build_qemu.py --work-dir "$build_root/qemu" --output-dir "$build_root/runtime"
+sudo tools/build_guest_image.sh "$build_root/debian.qcow2"
+python3 tests/guest_smoke.py "$build_root/debian.qcow2"
+python3 tools/package.py --qemu-runtime "$build_root/runtime" \
+  --guest-image "$build_root/debian.qcow2" --output-dir "$build_root/artifacts"
 ```
 
-打包脚本校验 QEMU 下载文件，生成 Windows x64 ZIP 和 `SHA256SUMS`。默认输出到系统临时目录。用 `--output-dir` 指定输出位置，用 `--installer` 复用已下载的 QEMU 安装包。
-
-| 目录 | 内容 |
+| 路径 | 职责 |
 | --- | --- |
-| `src/launcher/` | Win32 启动器和窗口资源 |
-| `packaging/windows/` | QEMU 版本锁定和 Windows 运行清单 |
-| `tools/` | 打包、版本编号和发布脚本 |
-| `tests/` | 版本分配测试 |
-| `.github/workflows/` | GitHub Actions 构建与发布入口 |
+| `src/app/` | Win32 主窗口、系统切换、硬件设置 |
+| `src/terminal/` | 内置终端的输入、绘制和滚动历史 |
+| `src/virtualization/` | 虚拟磁盘、QEMU 进程、串口和 QMP 管理 |
+| `guest/debian/` | 内置 Debian 的软件包和启动配置 |
+| `third_party/qemu/` | 上游版本锁、虚拟设备配置、Windows 集成补丁 |
+| `packaging/windows/` | Windows 工具链、应用资源和运行清单 |
+| `tools/`, `tests/` | 构建、打包、验收和发布 |
 
-GitHub Actions 为拉取请求构建开发包。`main` 的发布版本按提交的 UTC 年月和当月序号生成，格式为 `YYYY.M.N`。同一提交重跑时沿用已有版本号。
+GitHub Actions 在 Linux 构建、测试离线镜像和 NAT，然后在 Windows 检查便携包。通过检查的 `main` 构建按 UTC 年月及当月序号发布，附带 ZIP、QEMU 源码归档和 SHA-256 校验文件。
 
-## 上游组件
+### 上游组件
 
-便携包使用 Stefan Weil 的 QEMU 11.1.0 Windows x64 构建（2026-08-11）。上游许可证位于解压目录中的 `qemu/COPYING` 和 `qemu/COPYING.LIB`。 [Windows 构建与校验文件](https://qemu.weilnetz.de/w64/) · [对应 QEMU 源码](https://repo.or.cz/qemu/ar7.git/commit/e470268ff4) · [SeaBIOS 源码](https://github.com/qemu/seabios)
+QEMU 11.1.3 从源码构建，仅生成 Windows x64 运行所需的虚拟机程序与磁盘工具。设备配置保留 Q35、VirtIO 磁盘和网卡、AHCI 光驱、VGA、USB 指针、串口与 ACPI。上游文件、补丁和编译配置见 QEMU 源码归档与仓库的 `third_party/qemu/`。运行时许可证随包提供。 [QEMU](https://www.qemu.org/) · [SeaBIOS](https://github.com/qemu/seabios)
+
+内置系统来自 Debian 13 软件包仓库。镜像内的 `/usr/share/doc/` 保留软件包版权说明，便携包的 `guest/debian.packages` 记录二进制包与源码包版本。 [Debian 源码归档](https://snapshot.debian.org/)

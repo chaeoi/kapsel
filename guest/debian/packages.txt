@@ -1,0 +1,11 @@
+ca-certificates
+dbus
+initramfs-tools
+iproute2
+iputils-ping
+less
+linux-image-cloud-amd64
+nano
+sudo
+systemd-resolved
+systemd-sysv

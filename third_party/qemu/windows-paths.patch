@@ -1,0 +1,64 @@
+--- a/block/file-win32.c
++++ b/block/file-win32.c
+@@ -63,6 +63,22 @@
+     HANDLE hfile;
+ } BDRVRawReopenState;
+
++static HANDLE open_file_utf8(const char *filename, DWORD access, DWORD share,
++                             DWORD disposition, DWORD flags)
++{
++    gunichar2 *path = g_utf8_to_utf16(filename, -1, NULL, NULL, NULL);
++    if (!path) {
++        SetLastError(ERROR_NO_UNICODE_TRANSLATION);
++        return INVALID_HANDLE_VALUE;
++    }
++    HANDLE file = CreateFileW((LPCWSTR)path, access, share, NULL, disposition,
++                              flags, NULL);
++    DWORD error = GetLastError();
++    g_free(path);
++    SetLastError(error);
++    return file;
++}
++
+ /*
+  * Read/writes the data to/from a given linear buffer.
+  *
+@@ -362,9 +378,9 @@
+         snprintf(s->drive_path, sizeof(s->drive_path), "%c:\\", buf[0]);
+     }
+
+-    s->hfile = CreateFile(filename, access_flags,
+-                          FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+-                          OPEN_EXISTING, overlapped, NULL);
++    s->hfile = open_file_utf8(filename, access_flags,
++                              FILE_SHARE_READ | FILE_SHARE_WRITE,
++                              OPEN_EXISTING, overlapped);
+     if (s->hfile == INVALID_HANDLE_VALUE) {
+         int err = GetLastError();
+
+@@ -628,9 +644,9 @@
+      */
+
+     raw_parse_flags(state->flags, s->aio != NULL, &access_flags, &overlapped);
+-    rs->hfile = CreateFile(state->bs->filename, access_flags,
+-                           FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+-                           OPEN_EXISTING, overlapped, NULL);
++    rs->hfile = open_file_utf8(state->bs->filename, access_flags,
++                               FILE_SHARE_READ | FILE_SHARE_WRITE,
++                               OPEN_EXISTING, overlapped);
+
+     if (rs->hfile == INVALID_HANDLE_VALUE) {
+         int err = GetLastError();
+@@ -861,10 +877,9 @@
+
+     create_flags = OPEN_EXISTING;
+
+-    s->hfile = CreateFile(filename, access_flags,
+-                          FILE_SHARE_READ, NULL,
+-                          create_flags, overlapped, NULL);
++    s->hfile = open_file_utf8(filename, access_flags,
++                              FILE_SHARE_READ, create_flags, overlapped);
+     if (s->hfile == INVALID_HANDLE_VALUE) {
+         int err = GetLastError();
+
+         if (err == ERROR_ACCESS_DENIED) {

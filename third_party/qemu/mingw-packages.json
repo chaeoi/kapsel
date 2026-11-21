@@ -1,0 +1,46 @@
+[
+  {
+    "file": "mingw-w64-x86_64-glib2-2.90.1-1-any.pkg.tar.zst",
+    "sha256": "152ba3b2cfb35feebc0fcb690889b16a6f0c2b89ced52e65aea45d089f86d219"
+  },
+  {
+    "file": "mingw-w64-x86_64-pixman-0.46.4-3-any.pkg.tar.zst",
+    "sha256": "435715dd1ca4c55873cf3c38d644615196bc2d238e3366f8ff81cc0811260eb2"
+  },
+  {
+    "file": "mingw-w64-x86_64-SDL2-2.32.10-1-any.pkg.tar.zst",
+    "sha256": "5991afbcfeb2f8b838ab80b2270d713a727199ca392715677a7c1931a0d9ecef"
+  },
+  {
+    "file": "mingw-w64-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst",
+    "sha256": "be68d7f260633284b910c588c6d82ee304a81c8817a686d2cd9df83f872c27af"
+  },
+  {
+    "file": "mingw-w64-x86_64-libffi-3.8.1-1-any.pkg.tar.zst",
+    "sha256": "92ba29c4a632a01affff6cb48617bcb62d65c02bfe6df2ed27fb087a9ba51de3"
+  },
+  {
+    "file": "mingw-w64-x86_64-pcre2-10.49-2-any.pkg.tar.zst",
+    "sha256": "60211e4d11e0a891f9a55d8bbe8702c4cddace3a68967ac8eb82f1cffdcfca5f"
+  },
+  {
+    "file": "mingw-w64-x86_64-libiconv-1.19.1-1-any.pkg.tar.zst",
+    "sha256": "50e915aa36fdbe6c84acc8954e939275609ba051cdb4eeeff3884453c28efde0"
+  },
+  {
+    "file": "mingw-w64-x86_64-zlib-1.4-2-any.pkg.tar.zst",
+    "sha256": "2a065fb3311d6c08bd2c7431a092b912ade08a83954474e06ea4eb0479d908cd"
+  },
+  {
+    "file": "mingw-w64-x86_64-winpthreads-14.0.0.r598.ge3d18511f-1-any.pkg.tar.zst",
+    "sha256": "d875a6a969f01cc64caeebd337430d00528964123ce29c02873bb5c6c3c914b8"
+  },
+  {
+    "file": "mingw-w64-x86_64-libgcc-16.2.0-7-any.pkg.tar.zst",
+    "sha256": "6d1311b397ba33be542fd46bae3de60338bfd967e95e221847f01269e98983b8"
+  },
+  {
+    "file": "mingw-w64-x86_64-libstdc++-16.2.0-7-any.pkg.tar.zst",
+    "sha256": "578db695632bdb5bafd716958c4caa62560f3de2633680b258ae6f684201276d"
+  }
+]

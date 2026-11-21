@@ -1,0 +1,6 @@
+#define IDI_KAPSEL 100
+#define IDD_SETTINGS 101
+#define IDC_CPUS 102
+#define IDC_MEMORY 103
+#define IDC_CAPACITY 104
+#define IDC_WHPX 105

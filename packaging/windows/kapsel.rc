@@ -1,0 +1,46 @@
+#pragma code_page(65001)
+#include <windows.h>
+#include "resources.h"
+#include "version.h"
+
+1 RT_MANIFEST "kapsel.manifest"
+IDI_KAPSEL ICON "kapsel.ico"
+
+1 VERSIONINFO
+FILEVERSION KAPSEL_FILE_VERSION
+PRODUCTVERSION KAPSEL_FILE_VERSION
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "Kapsel"
+            VALUE "FileVersion", KAPSEL_VERSION
+            VALUE "OriginalFilename", "Kapsel.exe"
+            VALUE "ProductName", "Kapsel"
+            VALUE "ProductVersion", KAPSEL_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
+
+IDD_SETTINGS DIALOGEX 0, 0, 245, 149
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ISO 启动与硬件加速"
+FONT 10, "Microsoft YaHei UI"
+BEGIN
+    LTEXT "虚拟 CPU", -1, 12, 15, 110, 12
+    EDITTEXT IDC_CPUS, 145, 13, 48, 15, ES_NUMBER | ES_AUTOHSCROLL
+    LTEXT "内存（MiB）", -1, 12, 39, 110, 12
+    EDITTEXT IDC_MEMORY, 145, 37, 48, 15, ES_NUMBER | ES_AUTOHSCROLL
+    LTEXT "ISO 新盘容量（GiB）", -1, 12, 63, 125, 12
+    EDITTEXT IDC_CAPACITY, 145, 61, 48, 15, ES_NUMBER | ES_AUTOHSCROLL
+    AUTOCHECKBOX "优先使用 WHPX", IDC_WHPX, 12, 89, 181, 16, WS_TABSTOP
+    DEFPUSHBUTTON "保存", IDOK, 126, 120, 51, 17
+    PUSHBUTTON "取消", IDCANCEL, 182, 120, 51, 17
+END

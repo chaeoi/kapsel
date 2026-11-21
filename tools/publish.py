@@ -18,9 +18,11 @@ def publish(version, output_dir):
 
     package = output_dir / f"Kapsel-{version}-windows-x64.zip"
     checksums = output_dir / "SHA256SUMS"
+    source = output_dir / f"Kapsel-{version}-qemu-source.tar.xz"
     subprocess.run(["sha256sum", "--check", "SHA256SUMS"], cwd=output_dir, check=True)
-    if not package.is_file():
-        raise SystemExit(f"Missing release package: {package.name}")
+    for asset in (package, source):
+        if not asset.is_file():
+            raise SystemExit(f"Missing release asset: {asset.name}")
 
     tag = f"refs/tags/{version}"
     exists = subprocess.run(["git", "show-ref", "--verify", "--quiet", tag]).returncode == 0
@@ -41,7 +43,7 @@ def publish(version, output_dir):
     if not current:
         gh("release", "create", version, "--draft", "--verify-tag",
            "--title", f"Kapsel {version}", "--generate-notes")
-    gh("release", "upload", version, str(package), str(checksums), "--clobber")
+    gh("release", "upload", version, str(package), str(source), str(checksums), "--clobber")
     number = parse_version(version)
     published = (
         parse_version(release["tag_name"]) for release in releases

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
-import json
-import re
 import shutil
 import subprocess
 import tempfile
@@ -11,110 +9,69 @@ from pathlib import Path
 from version import DEVELOPMENT_VERSION, parse_version
 
 ROOT = Path(__file__).resolve().parents[1]
-LAUNCHER = ROOT / "src" / "launcher"
-PACKAGING = ROOT / "packaging" / "windows"
-MINGW = "x86_64-w64-mingw32-"
-EMULATORS = ["qemu-system-x86_64.exe", "qemu-img.exe"]
-FIRMWARE = ["bios-256k.bin", "vgabios-stdvga.bin", "kvmvapic.bin"]
+WINDOWS = ROOT / "packaging" / "windows"
 
 
-def file_hash(path, algorithm):
-    checksum = hashlib.new(algorithm)
+def sha256(path):
+    digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
-            checksum.update(block)
-    return checksum.hexdigest()
+            digest.update(block)
+    return digest.hexdigest()
 
 
-def build_launcher(stage, work, version, components):
-    numeric = (*components, 0)
-    version_header = work / "version.h"
-    version_header.write_text(
-        "#define KAPSEL_FILE_VERSION " + ",".join(map(str, numeric)) + "\n"
-        f'#define KAPSEL_VERSION "{version}"\n',
-        encoding="utf-8",
-    )
-    manifest = (LAUNCHER / "kapsel.manifest.in").read_text(encoding="utf-8")
-    (work / "kapsel.exe.manifest").write_text(
-        manifest.replace("@VERSION@", ".".join(map(str, numeric))), encoding="utf-8"
-    )
-    resource = work / "kapsel.res.o"
-    subprocess.run(
-        [MINGW + "windres", "--codepage=65001", "-I", work, LAUNCHER / "kapsel.rc", resource],
-        check=True,
-    )
-    subprocess.run(
-        [MINGW + "gcc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-s",
-         "-municode", "-mwindows", "-o", stage / "Kapsel.exe",
-         LAUNCHER / "kapsel.c", LAUNCHER / "appearance.c", resource,
-         "-lcomdlg32", "-lcomctl32", "-lgdi32"],
-        check=True,
-    )
+def package(version, runtime, image, output, vterm_source):
+    for path in (runtime / "qemu-system-x86_64.exe", runtime / "qemu-img.exe",
+                 runtime / "firmware" / "bios-256k.bin", image):
+        if not path.is_file():
+            raise SystemExit(f"Missing build input: {path}")
 
-
-def copy_qemu(upstream, destination):
-    destination.mkdir()
-    libraries = {path.name.lower(): path.name for path in upstream.glob("*.dll")}
-    pending = EMULATORS.copy()
-    copied = set()
-    while pending:
-        name = pending.pop()
-        if name in copied:
-            continue
-        binary = upstream / name
-        table = subprocess.check_output([MINGW + "objdump", "-p", binary], text=True)
-        for dependency in re.findall(r"DLL Name:\s+(\S+)", table):
-            filename = libraries.get(dependency.lower())
-            if filename:
-                pending.append(filename)
-        shutil.copy2(binary, destination / name)
-        copied.add(name)
-
-    (destination / "share").mkdir()
-    for name in FIRMWARE:
-        shutil.copy2(upstream / "share" / name, destination / "share" / name)
-    for name in ("COPYING", "COPYING.LIB", "README.rst", "VERSION"):
-        shutil.copy2(upstream / name, destination / name)
-    shutil.copy2(PACKAGING / "qemu-system-x86_64.exe.manifest", destination)
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Build the Kapsel Windows x64 portable ZIP.")
-    parser.add_argument("--installer", type=Path, help="Use a local copy of the pinned QEMU installer.")
-    parser.add_argument("--output-dir", type=Path, help="Output directory (defaults to a new system temp directory).")
-    parser.add_argument("--version", default=DEVELOPMENT_VERSION, help="Release version in YYYY.M.N format.")
-    args = parser.parse_args()
-    components = (0, 0, 0) if args.version == DEVELOPMENT_VERSION else parse_version(args.version)
-    if not components or components[2] > 65535:
-        parser.error("--version must be YYYY.M.N with N from 1 to 65535, or 0.0.0-dev")
-
-    dependency = json.loads((PACKAGING / "qemu.json").read_text(encoding="utf-8"))
-    with tempfile.TemporaryDirectory(prefix="kapsel-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="kapsel-package-") as temporary:
         work = Path(temporary)
-        installer = args.installer.resolve() if args.installer else work / "qemu-setup.exe"
-        if not args.installer:
-            subprocess.run(["curl", "-fL", "--retry", "2", "-o", installer, dependency["url"]], check=True)
-        if file_hash(installer, "sha512") != dependency["sha512"]:
-            parser.exit(1, f"SHA-512 mismatch: {installer}\n")
-
-        upstream = work / "upstream"
-        subprocess.run(["7z", "x", "-y", "-bso0", f"-o{upstream}", installer], check=True)
+        build = work / "build"
         stage = work / "Kapsel"
-        stage.mkdir()
-        build_launcher(stage, work, args.version, components)
-        copy_qemu(upstream, stage / "qemu")
+        configure = ["cmake", "-S", str(ROOT), "-B", str(build), "-G", "Ninja",
+                     f"-DCMAKE_TOOLCHAIN_FILE={WINDOWS / 'mingw-x64.cmake'}",
+                     "-DCMAKE_BUILD_TYPE=Release", f"-DKAPSEL_VERSION={version}"]
+        if vterm_source:
+            configure.append(f"-DFETCHCONTENT_SOURCE_DIR_LIBVTERM={vterm_source}")
+        subprocess.run(configure, check=True)
+        subprocess.run(["cmake", "--build", build], check=True)
+        subprocess.run(["cmake", "--install", build, "--prefix", stage, "--strip"], check=True)
+
+        shutil.copytree(runtime, stage / "runtime")
+        for filename in ("qemu-system-x86_64.exe.manifest", "kapsel.bmp"):
+            shutil.copy2(WINDOWS / filename, stage / "runtime")
+        (stage / "guest").mkdir()
+        shutil.copy2(image, stage / "guest" / "debian.qcow2")
+        sources = image.with_suffix(".packages")
+        if sources.is_file():
+            shutil.copy2(sources, stage / "guest" / "debian.packages")
         shutil.copy2(ROOT / "README.md", stage)
 
-        name = f"Kapsel-{args.version}-windows-x64"
-        package = Path(shutil.make_archive(str(work / name), "zip", work, stage.name))
-        output = args.output_dir.resolve() if args.output_dir else Path(tempfile.mkdtemp(prefix="kapsel-build-"))
         output.mkdir(parents=True, exist_ok=True)
-        shutil.move(package, output / package.name)
+        name = f"Kapsel-{version}-windows-x64"
+        archive = Path(shutil.make_archive(str(work / name), "zip", work, stage.name))
+        destination = output / archive.name
+        shutil.move(archive, destination)
+        source = output / f"Kapsel-{version}-qemu-source.tar.xz"
+        assets = [destination, source] if source.is_file() else [destination]
         (output / "SHA256SUMS").write_text(
-            f"{file_hash(output / package.name, 'sha256')}  {package.name}\n", encoding="utf-8"
-        )
-    print(output / package.name)
+            "".join(f"{sha256(asset)}  {asset.name}\n" for asset in assets), encoding="utf-8")
+    return destination
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Build the Kapsel portable Windows x64 ZIP.")
+    parser.add_argument("--qemu-runtime", type=Path, required=True)
+    parser.add_argument("--guest-image", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--vterm-source", type=Path, help="Use an already verified libvterm source tree.")
+    parser.add_argument("--version", default=DEVELOPMENT_VERSION)
+    args = parser.parse_args()
+    version = parse_version(args.version)
+    if args.version != DEVELOPMENT_VERSION and (not version or version[2] > 65535):
+        parser.error("--version must be YYYY.M.N with N from 1 to 65535, or 0.0.0-dev")
+    output = args.output_dir or Path(tempfile.mkdtemp(prefix="kapsel-build-"))
+    print(package(args.version, args.qemu_runtime.resolve(), args.guest_image.resolve(),
+                  output.resolve(), args.vterm_source.resolve() if args.vterm_source else None))

@@ -1,0 +1,53 @@
+--- a/ui/sdl2.c
++++ b/ui/sdl2.c
+@@ -201,12 +201,12 @@
+     }
+
+     if (qemu_name) {
+-        snprintf(win_title, sizeof(win_title), "QEMU (%s-%d)%s", qemu_name,
++        snprintf(win_title, sizeof(win_title), "Kapsel (%s-%d)%s", qemu_name,
+                  scon->idx, status);
+-        snprintf(icon_title, sizeof(icon_title), "QEMU (%s)", qemu_name);
+-    } else {
+-        snprintf(win_title, sizeof(win_title), "QEMU%s", status);
+-        snprintf(icon_title, sizeof(icon_title), "QEMU");
++        snprintf(icon_title, sizeof(icon_title), "Kapsel (%s)", qemu_name);
++    } else {
++        snprintf(win_title, sizeof(win_title), "Kapsel%s", status);
++        snprintf(icon_title, sizeof(icon_title), "Kapsel");
+     }
+
+     if (scon->real_window) {
+--- a/chardev/char-pipe.c
++++ b/chardev/char-pipe.c
+@@ -63,9 +63,10 @@
+
+     openname = g_strdup_printf("\\\\.\\pipe\\%s", filename);
+     s->file = CreateNamedPipe(openname,
+-                              PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
++                              PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED |
++                              FILE_FLAG_FIRST_PIPE_INSTANCE,
+                               PIPE_TYPE_BYTE | PIPE_READMODE_BYTE |
+-                              PIPE_WAIT,
++                              PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+                               MAXCONNECT, NSENDBUF, NRECVBUF, NTIMEOUT, NULL);
+     g_free(openname);
+     if (s->file == INVALID_HANDLE_VALUE) {
+@@ -77,12 +78,11 @@
+     ZeroMemory(&ov, sizeof(ov));
+     ov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+     ret = ConnectNamedPipe(s->file, &ov);
+-    if (ret) {
+-        error_setg(errp, "Failed ConnectNamedPipe");
+-        goto fail;
+-    }
+-
+-    ret = GetOverlappedResult(s->file, &ov, &size, TRUE);
++    if (!ret && GetLastError() == ERROR_PIPE_CONNECTED) {
++        ret = TRUE;
++    } else if (!ret && GetLastError() == ERROR_IO_PENDING) {
++        ret = GetOverlappedResult(s->file, &ov, &size, TRUE);
++    }
+     if (!ret) {
+         error_setg(errp, "Failed GetOverlappedResult");
+         if (ov.hEvent) {

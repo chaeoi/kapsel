@@ -17,7 +17,7 @@ jobs:
   build:
     name: Build Windows x64
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -25,8 +25,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify versioning
-        run: python3 -m unittest discover -s tests -v
+
       - name: Select build version
         id: version
         run: |
@@ -36,20 +35,48 @@ jobs:
             version=0.0.0-dev
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Install build tools
         if: steps.version.outputs.version != ''
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-win32 p7zip-full
-      - name: Build and verify portable package
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build g++-mingw-w64-x86-64-win32 binutils-mingw-w64-x86-64 \
+            pkg-config python3-venv zstd debootstrap grub-pc-bin grub2-common \
+            qemu-system-x86 qemu-utils
+
+      - name: Build the QEMU runtime
         if: steps.version.outputs.version != ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          python3 tools/package.py --version "$VERSION" --output-dir "$RUNNER_TEMP/kapsel-artifacts"
+          python3 tools/build_qemu.py \
+            --work-dir "$RUNNER_TEMP/qemu" --output-dir "$RUNNER_TEMP/runtime" \
+            --source-output "$RUNNER_TEMP/kapsel-artifacts/Kapsel-$VERSION-qemu-source.tar.xz"
+
+      - name: Build the offline Debian image
+        if: steps.version.outputs.version != ''
+        run: |
+          sudo tools/build_guest_image.sh "$RUNNER_TEMP/debian.qcow2"
+
+      - name: Test versioning and guest boot
+        if: steps.version.outputs.version != ''
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 tests/guest_smoke.py "$RUNNER_TEMP/debian.qcow2"
+
+      - name: Verify the portable package
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 tools/package.py --version "$VERSION" \
+            --qemu-runtime "$RUNNER_TEMP/runtime" --guest-image "$RUNNER_TEMP/debian.qcow2" \
+            --output-dir "$RUNNER_TEMP/kapsel-artifacts"
           cd "$RUNNER_TEMP/kapsel-artifacts"
           sha256sum --check SHA256SUMS
           unzip -tq "Kapsel-$VERSION-windows-x64.zip"
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.version.outputs.version != ''
         with:
@@ -59,10 +86,33 @@ jobs:
           compression-level: 0
           overwrite: true
 
+  windows:
+    name: Smoke test on Windows
+    if: needs.build.outputs.version != ''
+    needs: build
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: windows-x64
+          path: ${{ runner.temp }}/kapsel-artifacts
+      - name: Verify the unpacked Windows programs
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          $package = "$env:RUNNER_TEMP/kapsel-artifacts/Kapsel-$env:VERSION-windows-x64.zip"
+          Expand-Archive $package "$env:RUNNER_TEMP/portable 包"
+          ./tests/windows_smoke.ps1 "$env:RUNNER_TEMP/portable 包/Kapsel"
+
   release:
     name: Publish GitHub Release
     if: github.ref == 'refs/heads/main' && needs.build.outputs.version != ''
-    needs: build
+    needs: [build, windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -75,7 +125,7 @@ jobs:
         with:
           name: windows-x64
           path: ${{ runner.temp }}/kapsel-artifacts
-      - name: Publish package and checksum
+      - name: Publish verified assets
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.build.outputs.version }}
